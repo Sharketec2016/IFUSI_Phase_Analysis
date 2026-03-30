@@ -1,3 +1,8 @@
 Data
 .venv
 *.sync-conflict*
+*.png
+*.txt
+fft_phase_analysis
+helper scripts
+figures

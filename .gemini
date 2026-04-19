@@ -1,0 +1,8 @@
+# Phase Analysis Log
+- Task initiated: Analyze cross-correlation shapes and phase lag interpretations.
+- Researching codebase for CCF and phase calculation logic.
+- **Findings:**
+    - **Triangular CCF:** Indicates healthy correlation with clear peak; natural result of finite-window overlap.
+    - **Bow Tie CCF:** Indicates signal drift, frequency mismatch, or phase wrapping (aliasing).
+    - **Lag > 800:** Main Camera **lags** Other Camera significantly.
+    - **Lag < 50:** Cameras are **nearly synchronized**; Main Camera lags only slightly (if positive).

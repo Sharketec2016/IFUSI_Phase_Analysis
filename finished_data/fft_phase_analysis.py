@@ -170,21 +170,21 @@ def fft_cross_correlation(main_intensities, other_intensities, main_camera_id=No
     b = (other_intensities - np.mean(other_intensities)) / np.std(other_intensities)
 
 
-    # if plot and main_camera_id is not None and other_camera_id is not None and save_path is not None and file_name is not None:
-    #     fig1 = plt.figure(figsize=(10, 5))
-    #     plt.title("Normalized Intensity Signals of Camera {} and Camera {}".format(main_camera_id, other_camera_id))
-    #     plt.plot(a, label=f'{main_camera_id}')
-    #     plt.plot(b, label=f'{other_camera_id}')
-    #     plt.xlabel("Frame Index")
-    #     plt.ylabel("Normalized Intensity")
-    #     plt.legend()
+    if plot and main_camera_id is not None and other_camera_id is not None and save_path is not None and file_name is not None:
+        fig1 = plt.figure(figsize=(10, 5))
+        plt.title("Normalized Intensity Signals of Camera {} and Camera {}".format(main_camera_id, other_camera_id))
+        plt.plot(a, label=f'{main_camera_id}')
+        plt.plot(b, label=f'{other_camera_id}')
+        plt.xlabel("Frame Index")
+        plt.ylabel("Normalized Intensity")
+        plt.legend()
 
-    #     confirm_folder_path(f"{save_path}/{main_camera_id}vs{other_camera_id}")
-    #     plt.savefig(f"{save_path}/{main_camera_id}vs{other_camera_id}/normalized_signals_cam__{file_name}.png", dpi=300)
+        confirm_folder_path(f"{save_path}/{main_camera_id}vs{other_camera_id}")
+        plt.savefig(f"{save_path}/{main_camera_id}vs{other_camera_id}/normalized_signals_cam__{file_name}.png", dpi=300)
         
         
-    #     # plt.show()
-    #     plt.close(fig1)
+        # plt.show()
+        plt.close(fig1)
 
 
     N = len(a)
@@ -207,21 +207,21 @@ def fft_cross_correlation(main_intensities, other_intensities, main_camera_id=No
     phase_offset = max_peak
 
 
-    # if plot and main_camera_id is not None and other_camera_id is not None and save_path is not None and file_name is not None:
-    #     fig2 = plt.figure(figsize=(10, 5))
-    #     plt.title("Cross-Correlation between Camera {} and Camera {}".format(main_camera_id, other_camera_id))
-    #     plt.plot(correlation)
-    #     plt.vlines(np.argmax(correlation), 0, correlation[np.argmax(correlation)], color='r', label='Peak')
-    #     plt.xlabel("Lag (frames)")
-    #     plt.ylabel("Cross-Correlation")
-    #     plt.legend()
-    #     confirm_folder_path(f"{save_path}/{main_camera_id}vs{other_camera_id}")
-    #     plt.savefig(f"{save_path}/{main_camera_id}vs{other_camera_id}/Cross-Correlation__{file_name}.png", dpi=300)
+    if plot and main_camera_id is not None and other_camera_id is not None and save_path is not None and file_name is not None:
+        fig2 = plt.figure(figsize=(10, 5))
+        plt.title("Cross-Correlation between Camera {} and Camera {}".format(main_camera_id, other_camera_id))
+        plt.plot(correlation)
+        plt.vlines(np.argmax(correlation), 0, correlation[np.argmax(correlation)], color='r', label='Peak')
+        plt.xlabel("Lag (frames)")
+        plt.ylabel("Cross-Correlation")
+        plt.legend()
+        confirm_folder_path(f"{save_path}/{main_camera_id}vs{other_camera_id}")
+        plt.savefig(f"{save_path}/{main_camera_id}vs{other_camera_id}/Cross-Correlation__{file_name}.png", dpi=300)
 
-    #     # plt.show()
-    #     plt.close(fig2)
+        # plt.show()
+        plt.close(fig2)
 
-    return max_peak, phase_offset, correlation
+    return max_peak, phase_offset
 
 def plot_phase_drift_histogram(phase_df):
     grouped_sets = phase_df.groupby(["Main Camera", "Other Camera"])
@@ -318,7 +318,7 @@ def plot_drift_fit(indices, lags, popt,
     plt.close(fig7)
 
 
-def gather_intensities(main_camera_path, other_camera_path, main_box, other_box, main_camera, other_cam_id, file, other_file):
+def gather_intensities(main_camera_path, other_camera_path, main_box, other_box, main_camera, other_cam_id, file):
     main_intensities = cal_intensities(
         os.path.join(main_camera_path, file),
         main_camera,
@@ -350,28 +350,6 @@ def curve_fit_phase_drift(indices, lags, plot_data):
     return popt, pcov
 
 
-def gaussian(x, A, mu, sigma):
-    return A * np.exp(-(x - mu) ** 2 / (2 * sigma**2))
-
-
-def fit_correlation_peak(correlation, peak_idx, window_half=5):
-
-    # Gaussian fit on a window ±10 points around the peak
-    peak_idx = np.argmax(correlation)
-    window_half = 5
-    fit_x_min = max(0, peak_idx - window_half)
-    fit_x_max = min(len(correlation), peak_idx + window_half + 1)
-
-    # Extract window for fitting
-    fit_x = np.arange(fit_x_min, fit_x_max) 
-    fit_y = correlation[fit_x_min:fit_x_max] - np.min(correlation)
-
-
-    popt, pcov = curve_fit(gaussian, fit_x, fit_y, p0=[correlation[peak_idx], peak_idx, 1])
-    return popt, pcov, fit_x, fit_y
-
-
-
 if __name__ == "__main__":
 
     camera_ids = [12574, 12606, 13251, 13703]
@@ -381,18 +359,13 @@ if __name__ == "__main__":
 
     camera_pairs = list(combinations(camera_ids, 2))
 
-    total_files_to_process = len(camera_pairs) * (15 + 12)
+    total_files_to_process = len(camera_pairs) * 15
     processed_sofar = 0
 
     phase_df = pd.DataFrame()
 
     results_list = []
     start_time = time.time()
-
-    num_missed = 0
-
-
-    fitted_data = {"mu": [], "sigma": [], "main_camera": [], "other_camera": [], "file": []}
 
     for main_camera, other_cam_id in camera_pairs:
 
@@ -416,108 +389,80 @@ if __name__ == "__main__":
                     continue
 
 
-
-
-                try:
-
-                    main_intensities, other_intensities = gather_intensities(
-                        main_camera_path, other_camera_path,
-                        main_box, other_box,
-                        main_camera, other_cam_id,
-                        file,
-                        other_file
-                    )
-
-                    max_peak, phase_offset, correlation = fft_cross_correlation(
-                        main_intensities,
-                        other_intensities,
-                        main_camera_id=main_camera,
-                        other_camera_id=other_cam_id,
-                        plot=False,
-                        save_path=f"./fft_phase_analysis/{Hz}Hz",
-                        file_name=f"{file.split('.')[0]}"
-                    )
-
-
-                    popt, pcov, fit_x, fit_y = fit_correlation_peak(correlation, max_peak, window_half=5)
-
-                    fitted_data["mu"].append(popt[1])
-                    fitted_data["sigma"].append(popt[2])
-                    fitted_data["main_camera"].append(main_camera)
-                    fitted_data["other_camera"].append(other_cam_id)
-                    fitted_data["file"].append(file)
-
-                    processed_sofar += 1
-                    # print(f"Files left to process: {total_files_to_process - processed_sofar - 1}")
-
-                    print(f"\n\rProcessed {file} for Camera {main_camera} vs Camera {other_cam_id}: \n\tPeak at {popt[1]:.2f} \n\tframes with sigma {popt[2]:.2f} frames\n\nFiles left to process: {total_files_to_process - processed_sofar - 1}")
-                except Exception as e:
-                    print(f"Error processing {file} for Camera {main_camera} vs Camera {other_cam_id}: {e}")
-                    num_missed += 1
-                    continue
+                processed_sofar += 1
+                print(f"Files left to process: {total_files_to_process - processed_sofar - 1}")
 
 
 
+                main_intensities, other_intensities = gather_intensities(
+                    main_camera_path, other_camera_path,
+                    main_box, other_box,
+                    main_camera, other_cam_id,
+                    file
+                )
 
-    #             indices, lags = sliding_window_correlation(
-    #                 main_intensities,
-    #                 other_intensities,
-    #                 window_size=WINDOWS_SIZE,
-    #                 step=STEP_SIZE,
-    #                 main_camera_id=main_camera,
-    #                 other_camera_id=other_cam_id,
-    #                 plot=plot_data,
-    #                 save_path=f"./fft_phase_analysis/{Hz}Hz",
-    #                 file_name=f"{file.split('.')[0]}"
-    #             )
+                max_peak, phase_offset = fft_cross_correlation(
+                    main_intensities,
+                    other_intensities,
+                    main_camera_id=main_camera,
+                    other_camera_id=other_cam_id,
+                    plot=plot_data,
+                    save_path=f"./fft_phase_analysis/{Hz}Hz",
+                    file_name=f"{file.split('.')[0]}"
+                )
 
-    #             popt, pcov = curve_fit_phase_drift(indices, lags, plot_data)
-    #             a_fit, b_fit = popt
-    #             a_err, b_err = np.sqrt(np.diag(pcov))
+                indices, lags = sliding_window_correlation(
+                    main_intensities,
+                    other_intensities,
+                    window_size=WINDOWS_SIZE,
+                    step=STEP_SIZE,
+                    main_camera_id=main_camera,
+                    other_camera_id=other_cam_id,
+                    plot=plot_data,
+                    save_path=f"./fft_phase_analysis/{Hz}Hz",
+                    file_name=f"{file.split('.')[0]}"
+                )
 
-    #             time_offset = phase_offset * EXPOSURE_TIME
-    #             phase_deg = (360 * time_offset / PERIOD)
+                popt, pcov = curve_fit_phase_drift(indices, lags, plot_data)
+                a_fit, b_fit = popt
+                a_err, b_err = np.sqrt(np.diag(pcov))
 
-    #             results_list.append({
-    #                 "Main Camera": main_camera,
-    #                 "Other Camera": other_cam_id,
-    #                 "Max Peak": float(max_peak),
-    #                 "Phase Offset": int(phase_offset),
-    #                 "Phase Degrees": float(phase_deg),
-    #                 "Time Offset (s)": float(time_offset),
-    #                 "Window Size": WINDOWS_SIZE,
-    #                 "Step Size": STEP_SIZE,
-    #                 "Slope": float(a_fit),
-    #                 "Intercept": float(b_fit),
-    #                 "Slope Error": float(a_err),
-    #                 "Intercept Error": float(b_err),
-    #                 "File": f"{file}"
-    #             })
+                time_offset = phase_offset * EXPOSURE_TIME
+                phase_deg = (360 * time_offset / PERIOD)
 
-    #             plot_data = False
+                results_list.append({
+                    "Main Camera": main_camera,
+                    "Other Camera": other_cam_id,
+                    "Max Peak": float(max_peak),
+                    "Phase Offset": int(phase_offset),
+                    "Phase Degrees": float(phase_deg),
+                    "Time Offset (s)": float(time_offset),
+                    "Window Size": WINDOWS_SIZE,
+                    "Step Size": STEP_SIZE,
+                    "Slope": float(a_fit),
+                    "Intercept": float(b_fit),
+                    "Slope Error": float(a_err),
+                    "Intercept Error": float(b_err),
+                    "File": f"{file}"
+                })
+
+                plot_data = False
 
 
 
                     
 
-    #     new_df = pd.DataFrame(results_list)
+        new_df = pd.DataFrame(results_list)
 
-    #     phase_df = pd.concat([phase_df, new_df], ignore_index=True)
-    #     results_list = []
+        phase_df = pd.concat([phase_df, new_df], ignore_index=True)
+        results_list = []
         
 
-    # phase_df.to_csv(f"./fft_phase_analysis/{Hz}Hz/phase_analysis_results.csv", index=False)
+    phase_df.to_csv(f"./fft_phase_analysis/{Hz}Hz/phase_analysis_results.csv", index=False)
     print(f"Total time taken: {time.time() - start_time:.2f} seconds")
 
-    print(f"Total files processed: {processed_sofar}")
-    print(f"Total files missed due to errors: {num_missed}")
     
     print("All done!")
-
-
-    df = pd.DataFrame(fitted_data)
-    df.to_csv(f"./fft_phase_analysis/{Hz}Hz/gaussian_fit_cross_correlation_results.csv", index=False)
-    print("Gaussian fit results saved to CSV.")
 
 
 
